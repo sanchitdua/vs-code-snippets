@@ -1,0 +1,4 @@
+
+### access token request
+POST https://{{baseUrl}}/services/oauth2/token?grant_type={{grant_type}}&client_id={{client_id}}&client_secret={{client_secret}}&username={{username}}&password={{password}}
+

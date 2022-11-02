@@ -1,0 +1,157 @@
+
+# Composite SObject Collection
+#Executes actions on multiple records in one request. 
+#One request can handle only one object.
+#Upsert up to 200 records.
+#The list can contain objects of different types, including custom objects.
+#Objects are created in the order they’re listed. 
+#Sample URI POST /services/data/vXX.X/composite/sobjects
+
+### Request 1: Sobject Upsert Collection
+### limit 200 records per payload
+
+## /services/data/vXX.X/sobjects/sObject	POST
+### /services/data/vXX.X/sobjects/sObject/id	DELETE, GET, PATCH
+#### /services/data/vXX.X/sobjects/sObject/customFieldName/externalId	DELETE, GET, PATCH, POST
+
+PATCH {{_endpoint}}/services/data/v{{version}}/composite/sobjects/Account/Customer_ID__c
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "allOrNone": false,
+  "records": [
+    {
+      "attributes": {
+        "type": "Account"
+      },
+      "BillingCountry": "Netherlands",
+      "BillingState": "Utrecht",
+      "Customer_ID__c": "1234567",
+      "RecordTypeId": "012900000012LJyAAM",
+      "CurrencyIsoCode": "EUR",
+      "BillingCity": "Zeist",
+      "BillingPostalCode": "4906 CG",
+      "BillingStreet": "Burgemeester Patijnlaan 186",
+      "Name": "The Netherlands B.V.  - Neu RT ",
+      "Phone": "+31162468500"
+    },
+    {
+      "attributes": {
+        "type": "Account"
+      },
+      "BillingCountry": "Germany",
+      "BillingState": "Freistaat Bayern",
+      "Customer_ID__c": "1234568",
+      "RecordTypeId": "012900000012LK3AAM",
+      "CurrencyIsoCode": "EUR",
+      "BillingCity": "Sonnefeld",
+      "BillingPostalCode": "4906 CG",
+      "BillingStreet": "Billwerder Neuer Deich 25",
+      "Name": "The Netherlands B.V.  - Alt RT ",
+      "Phone": "+49 09233 90 64 31"
+    }
+  ]
+}
+
+### Request 2: Composite sObject Tree
+### URI
+### /services/data/vXX.X/composite/batch
+### 
+### sObject Tree is useful for creating parent-child relationships records. We can create sObject Tree up to 5 levels deep. The sObject tree is limited to Up to a total of 200 records across all trees. 
+
+
+
+POST {{_endpoint}}/services/data/v{{version}}/composite/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{access_token}}
+
+{
+  "allOrNone": false,
+  "compositeRequest": [
+    {
+      "url": "/services/data/v44.0/query?q=select+id+from+recordtype+where+sobjecttype='Account'+order+by+recordtype.name",
+      "method": "GET",
+      "referenceId": "recType"
+    },
+    {
+      "method": "PATCH",
+      "url": "/services/data/v52.0/sobjects/Account/Customer_ID__c/1234569",
+      "referenceId": "NewAccount1",
+      "body": {
+        "BillingCountry": "Netherlands",
+        "BillingState": "Utrecht",
+        "RecordTypeId": "@{recType.records[1].Id}",
+        "CurrencyIsoCode": "EUR",
+        "BillingCity": "Zeist",
+        "BillingPostalCode": "4906 CG",
+        "BillingStreet": "Burgemeester Patijnlaan 186",
+        "Industry": "Agriculture",
+        "Name": "The Netherlands B.V.  - Neu RT ",
+        "Phone": "+31162468500"
+      }
+    },
+    
+    {
+        "method": "PATCH",
+        "url": "/services/data/v52.0/sobjects/Contact/ContactID__c/HU113464S",
+        "referenceId": "NewContact13464",
+        "body": {
+            "LastName": "Sample Contact",
+            "Title": "Mr",
+            "Email": "xyz@gmail.com",
+            "Phone": "+49000000",
+            "AccountId": "@{NewAccount1.id}"
+        }
+    },
+    {
+        "method": "PATCH",
+        "url": "/services/data/v52.0/sobjects/Contact/ContactID__c/HU113465S",
+        "referenceId": "NewContact13465",
+        "body": {
+            "LastName": "Sample Contact2",
+            "Title": "Mrs",
+            "Email": "abc@gmail.com",
+            "Phone": "+491111111",
+            "AccountId": "@{NewAccount1.id}"
+        }
+    }
+    
+  ]
+}
+
+
+### Request 3: Parent child hieararchy / Sobject Tree
+### limit 25 requests including subrequests
+### One level from parent to child - use relationship name
+
+
+
+POST {{_endpoint}}/services/data/v{{version}}/composite/
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer {{access_token}}
+
+{
+"attributes" : {"type" : "Account", "referenceId" : "ref1"},
+"name" : "SampleAccount",
+"phone" : "1234567890",
+"website" : "www.salesforce.com",
+"NumberOfEmployees" : "100",
+"industry" : "Banking",
+"Contacts" : {
+  "records" : [{
+     "attributes" : {"type" : "Contact", "referenceId" : "ref2"},
+     "lastname" : "Smith",
+     "title" : "President",
+     "email" : "sample@salesforce.com"
+      },{         
+     "attributes" : {"type" : "Contact", "referenceId" : "ref3"},
+     "lastname" : "Evans",
+     "title" : "Vice President",
+     "email" : "sample@salesforce.com"
+     }]
+  }
+}
